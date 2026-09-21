@@ -1,6 +1,7 @@
 package com.ecommerce.productservice_ecom.services;
 
 import com.ecommerce.productservice_ecom.dtos.FakeStoreProductDto;
+import com.ecommerce.productservice_ecom.exceptions.ProductNotFoundException;
 import com.ecommerce.productservice_ecom.models.Category;
 import com.ecommerce.productservice_ecom.models.Product;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -19,7 +21,7 @@ public class FakeStoreProductService implements ProductService {
     }
 
     @Override
-    public Product getProductById(long id) {
+    public Product getProductById(Long id) throws ProductNotFoundException {
         // Implementing a FakeStore APT
         ResponseEntity<FakeStoreProductDto> responseEntity =
                 restTemplate.getForEntity(
@@ -27,13 +29,26 @@ public class FakeStoreProductService implements ProductService {
                 );
         // now, we have to convert FakeStoreDto to product object
         FakeStoreProductDto fakeStoreProductDto = responseEntity.getBody();
-        Product product = convertFakestoreProductDtotoProduct(fakeStoreProductDto);
+
+        if(fakeStoreProductDto==null){
+            throw new ProductNotFoundException(id,"Product not found please pass valid product id");
+        }
+        Product product = from(fakeStoreProductDto);
         return product;
     }
 
     @Override
     public List<Product> getAllProducts() {
-        return List.of();
+        ResponseEntity<FakeStoreProductDto[]> responseEntity =
+                restTemplate.getForEntity(
+                        "https://fakestoreapi.com/products/" , FakeStoreProductDto[].class
+                );
+        // now, we have to convert FakeStoreDto[] array into List<>
+        List<Product> products = new ArrayList<>();
+        for(FakeStoreProductDto fakeStoreProductDto : responseEntity.getBody()){
+            products.add(from(fakeStoreProductDto));
+        }
+        return products;
     }
 
     @Override
@@ -51,8 +66,8 @@ public class FakeStoreProductService implements ProductService {
 
     }
 
-    private Product convertFakestoreProductDtotoProduct(FakeStoreProductDto fakeStoreProductDto) {
-        if(fakeStoreProductDto.getId()!=null){
+    private Product from(FakeStoreProductDto fakeStoreProductDto) {
+        if(fakeStoreProductDto!=null){
             Product product = new Product();
             product.setId(fakeStoreProductDto.getId());
             product.setTitle(fakeStoreProductDto.getTitle());
