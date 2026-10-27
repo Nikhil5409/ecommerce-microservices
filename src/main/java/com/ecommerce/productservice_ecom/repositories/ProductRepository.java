@@ -8,6 +8,13 @@ import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-    Optional<Product> findById(Long id);
+    //Optional<Product> findById(Long id);
 }
 
+
+
+
+/*
+if we are not using JPA, then we should be writing SQL queries manually to get Data,
+getProductById(id) -> select * from products p where p.id = id;
+ */
